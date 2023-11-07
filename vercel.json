@@ -1,0 +1,16 @@
+{
+  "env": {
+    "NEXT_PUBLIC_REST_API_ENDPOINT": "https://api.marvinsden.com/api/",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "pk_test_51Jg5KZFf8reu2sN8Nb6W2eOyzQkTjJvIMOCJfdpclpQMSltUWoHiDTkHIwPO8F3m5YGyJxGV5mzx8qq7w83FNtvM00gwBa6zbh",
+    "NEXT_PUBLIC_WEBSITE_URL": "localhost:3000",
+    "NEXT_PUBLIC_GOOGLE_API_KEY": "AIzaSyBDdvWZqGr-TtDvVtQfMfOhVRgMZl0i66o"
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_REST_API_ENDPOINT": "https://api.marvinsden.com/api/",
+      "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "pk_test_51Jg5KZFf8reu2sN8Nb6W2eOyzQkTjJvIMOCJfdpclpQMSltUWoHiDTkHIwPO8F3m5YGyJxGV5mzx8qq7w83FNtvM00gwBa6zbh",
+      "NEXT_PUBLIC_WEBSITE_URL": "localhost:3000",
+      "NEXT_PUBLIC_GOOGLE_API_KEY": "AIzaSyBDdvWZqGr-TtDvVtQfMfOhVRgMZl0i66o"
+    }
+  }
+}

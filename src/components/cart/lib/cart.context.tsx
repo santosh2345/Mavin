@@ -17,8 +17,7 @@ import toast from 'react-hot-toast';
 import { API_ENDPOINTS } from '@/data/client/endpoints';
 import useAuth from '@/components/auth/use-auth';
 
-import { analytics } from '@/lib/firebase';
-import { logEvent } from 'firebase/analytics';
+import { analytics, logEvent } from '@/lib/firebase';
 import * as fbq from '../../../lib/fpixel';
 
 interface CartProviderState extends State {
@@ -149,16 +148,19 @@ export const CartProvider: React.FC = (props) => {
           dispatch({ type: 'ADD_ITEM_WITH_QUANTITY', item, quantity });
           refetch();
 
+          const eventCurrency = (
+            (item as any).currency_code || 'usd'
+          ).toUpperCase();
           // google analytics
           logEvent(analytics, 'add_to_cart', {
-            currency: 'GBP',
+            currency: eventCurrency,
             value: item.price,
             items: [{ ...item }],
           });
 
           //FB ANALYTICS
           fbq.event('AddToCart', {
-            currency: 'GBP',
+            currency: eventCurrency,
             value: item.price,
             contents: [{ ...item }],
           });

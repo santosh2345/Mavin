@@ -29,7 +29,7 @@ const UserSchema = new Schema<IUser>(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true, index: true },
     mobile: { type: String, default: '' },
-    mobile_country_code: { type: String, default: '+44' },
+    mobile_country_code: { type: String, default: '' },
     password: { type: String, required: true },
     credit: { type: Number, default: 0 },
     profile_photo: { type: String, default: '' },

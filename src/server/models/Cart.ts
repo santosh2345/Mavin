@@ -11,6 +11,8 @@ export interface ICartItem {
   price: number;
   qty: number;
   total_price: number;
+  currency: string;
+  currency_code: string;
   item_options: any[];
   cart_item_options: any[];
 }
@@ -35,6 +37,8 @@ const CartItemSchema = new Schema<ICartItem>(
     price: { type: Number, required: true },
     qty: { type: Number, default: 1 },
     total_price: { type: Number, default: 0 },
+    currency: { type: String, default: '$' },
+    currency_code: { type: String, default: 'usd' },
     item_options: { type: [Schema.Types.Mixed], default: [] },
     cart_item_options: { type: [Schema.Types.Mixed], default: [] },
   },

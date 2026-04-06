@@ -57,6 +57,8 @@ export async function addItemToCart(params: {
       price: unitPrice,
       qty: params.qty,
       total_price: unitPrice * params.qty,
+      currency: restaurant?.currency || item.currency || '$',
+      currency_code: restaurant?.currency_code || item.currency_code || 'usd',
       item_options: params.item_options || [],
       cart_item_options: [],
     };

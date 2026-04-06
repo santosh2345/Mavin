@@ -31,11 +31,10 @@ export default function PhoneInput({
   return (
     <div className={className}>
       <ReactPhone
-        country={'gb'}
+        country={'us'}
+        enableSearch
         value={phoneNumber}
         onChange={(value) => setPhoneNumber(value)}
-        disableDropdown
-        countryCodeEditable={false}
         disabled={disabled}
       />
     </div>

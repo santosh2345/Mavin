@@ -103,11 +103,15 @@ const CheckoutPage: NextPageWithLayout = () => {
   );
 
   function verify() {
+    const currencySymbol = (items[0] as any)?.currency || '$';
+    const currencyCode = ((items[0] as any)?.currency_code || 'usd').toLowerCase();
     if (total - me?.credit - couponValue + deliveryCharge < 0.3) {
       toast.error(
         <b>
           You need to order more than your credit amount. Your credit amount is:
-          £{me.credit}
+          {' '}
+          {currencySymbol}
+          {me.credit}
         </b>,
         {
           className: '-mt-10 xs:mt-0',
@@ -122,7 +126,8 @@ const CheckoutPage: NextPageWithLayout = () => {
       ).toFixed(),
       consumer_id: userInfo.consumer_id,
       restaurant_id: items[0].restaurant_id!,
-    });
+      currency: currencyCode,
+    } as any);
   }
 
   const verifyCouponClick = () => {

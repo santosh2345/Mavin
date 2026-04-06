@@ -92,16 +92,22 @@ export const CartProvider: React.FC = (props) => {
   // }, [data]);
 
   React.useEffect(() => {
-    if ((isAuthorized && !!userInfo) || !isAuthorized) {
-      setTimeout(() => {
-        refetch();
-        dispatch({
-          type: 'READ_FROM_API',
-          allItems: data?.payload.cartItems || [],
-          order_pickup_date: data?.payload.order_pickup_date || '',
-        });
-      }, 500);
-    }
+    // Only fetch the cart once we actually have an identifier — either
+    // an authenticated consumer_id or a guest device id from geolocation.
+    const hasOwnerId = isAuthorized
+      ? !!userInfo?.consumer_id
+      : !!location?.guestInfo;
+    if (!hasOwnerId) return;
+
+    const t = setTimeout(() => {
+      refetch();
+      dispatch({
+        type: 'READ_FROM_API',
+        allItems: data?.payload.cartItems || [],
+        order_pickup_date: data?.payload.order_pickup_date || '',
+      });
+    }, 500);
+    return () => clearTimeout(t);
   }, [refetch, userInfo, location, isAuthorized, data]);
 
   const { mutate: addingItemToCart, isLoading: adding } = useMutation(

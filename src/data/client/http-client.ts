@@ -4,20 +4,18 @@ import Router from 'next/router';
 import { getAuthToken, removeAuthToken } from './token.utils';
 
 const Axios = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_REST_API_ENDPOINT,
-  timeout: 10000,
+  baseURL: process.env.NEXT_PUBLIC_REST_API_ENDPOINT || '/api',
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 // Change request data/error here
 Axios.interceptors.request.use(
-  (config) => {
+  (config: any) => {
     const token = getAuthToken();
-    config.headers = {
-      ...config.headers,
-      Authorization: `Bearer ${token ? token : ''}`,
-    };
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token ? token : ''}`;
     return config;
   },
   (error) => {

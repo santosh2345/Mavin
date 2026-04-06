@@ -56,11 +56,12 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
 
   const FB_PIXEL_ID = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID;
 
-  const isMac =
-    typeof window !== 'undefined'
-      ? // navigator.platform.toUpperCase().indexOf('MAC') >= 0 ||
-        navigator.platform.toUpperCase().indexOf('IPHONE') >= 0
-      : true;
+  // Defer browser-only platform detection to after hydration so the
+  // server and first client render match.
+  const [isMac, setIsMac] = useState(true);
+  useEffect(() => {
+    setIsMac(navigator.platform.toUpperCase().indexOf('IPHONE') >= 0);
+  }, []);
 
   useEffect(() => {
     // This pageview only triggers the first time (it's important for Pixel to have real information)
@@ -89,7 +90,23 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
     // router.events.on('routeChangeError', handleComplete);
   }, [router]);
 
-  const [location, setLocation] = useState({});
+  const [location, setLocation] = useState<any>({});
+
+  // Initialise a stable, persisted guest id immediately so the cart can
+  // start querying right away — even if the user denies geolocation.
+  useEffect(() => {
+    let guestId = '';
+    try {
+      guestId = window.localStorage.getItem('marvin_guest_id') || '';
+      if (!guestId) {
+        guestId = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+        window.localStorage.setItem('marvin_guest_id', guestId);
+      }
+    } catch {
+      guestId = `guest_${Date.now()}`;
+    }
+    setLocation((prev: any) => ({ ...prev, guestInfo: guestId }));
+  }, []);
 
   useEffect(() => {
     const getMyLocation = () => {
@@ -110,16 +127,17 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
               .then((responseJson) => {
                 console.log('response json', responseJson);
                 const postcode =
-                  responseJson.results[0].address_components.find(
+                  responseJson.results[0]?.address_components.find(
                     (addr: any) => addr.types[0] === 'postal_code'
                   )?.short_name || 'no-code';
-                setLocation({
+                setLocation((prev: any) => ({
+                  ...prev,
                   latitude: position.coords.latitude,
                   longitude: position.coords.longitude,
                   address: responseJson.results[0]?.formatted_address || 'xxx',
-                  guestInfo: new Date().toString(),
+                  guestInfo: prev?.guestInfo || new Date().toString(),
                   postcode,
-                });
+                }));
               });
           },
           (error) => {
@@ -154,13 +172,14 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
 
             // setPageLoading(true);
 
-            setLocation({
+            setLocation((prev: any) => ({
+              ...prev,
               latitude: 51.5256224,
               longitude: -0.0836253,
               address: '_',
-              guestInfo: new Date().toString(),
+              guestInfo: prev?.guestInfo || new Date().toString(),
               postcode: 'EC2A 4NE',
-            });
+            }));
           }
         );
       }
@@ -274,7 +293,7 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
                       ) : (
                         getLayout(<Component {...pageProps} />)
                       )}
-                      <PopupButton
+                      <PopupButton 
                         id={'jtWs4On7'}
                         style={{ position: 'fixed' }}
                         size={86}

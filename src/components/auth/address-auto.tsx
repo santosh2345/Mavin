@@ -20,7 +20,7 @@ export default function AddressAuto({ onSelect }: Props) {
           setAddress(address);
           if (results.length > 0) {
             const result = results[0];
-            const postcode = result.address_components.find(
+            const postcode = result?.address_components.find(
               (addr: any) => addr.types[0] === 'postal_code'
             )?.short_name;
 

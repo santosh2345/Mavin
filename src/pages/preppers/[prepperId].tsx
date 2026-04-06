@@ -36,21 +36,12 @@ type ParsedQueryParams = {
 };
 
 export const getStaticPaths: GetStaticPaths<ParsedQueryParams> = async () => {
-  const { payload } = await client.preppers.get({
-    latitude: 52.2880064,
-    longitude: 0.0522195,
-    code: 'EN',
-  });
-  const paths = payload
-    .map((b) => b.data)
-    .flat()
-    .map((prepper) => ({
-      params: { prepperId: prepper.restaurant_id },
-    }));
-
+  // Pages are generated on-demand via fallback. We intentionally do not
+  // hit the backend at build time so the build does not depend on a
+  // running database / API server.
   return {
-    paths,
-    fallback: true,
+    paths: [],
+    fallback: 'blocking',
   };
 };
 type PageProps = {

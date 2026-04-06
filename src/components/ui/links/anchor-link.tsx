@@ -5,7 +5,7 @@ const AnchorLink: React.FC<
   LinkProps & Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>
 > = ({ href, ...props }) => {
   return (
-    <NextLink href={href}>
+    <NextLink href={href} legacyBehavior>
       <a {...props} />
     </NextLink>
   );

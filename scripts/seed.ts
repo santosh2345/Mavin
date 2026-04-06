@@ -22,18 +22,23 @@ const PLACEHOLDER_LOGO =
 const PLACEHOLDER_COVER =
   'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1200';
 
+// Restaurants span multiple countries — each ships with its own currency.
+// `currency` is the display symbol; `currency_code` is the ISO 4217 code that
+// Stripe uses when creating PaymentIntents.
 const RESTAURANTS = [
   {
     restaurant_id: 'RES_FUEL_KITCHEN',
     name: 'Fuel Kitchen',
     description: 'High-protein meal prep crafted by performance chefs.',
-    address: '12 High Street, London E1 6AN',
+    address: '350 5th Ave, New York, NY 10118, USA',
     restaurant_type_id: 'RTY_HIGH_PROTEIN',
     restaurant_type_title: 'High Protein',
-    delivery_charge: 2.99,
-    minimum_order_amount: 15,
-    restaurant_longitude: -0.0707,
-    restaurant_latitude: 51.5155,
+    delivery_charge: 3.99,
+    minimum_order_amount: 20,
+    restaurant_longitude: -73.9857,
+    restaurant_latitude: 40.7484,
+    currency: '$',
+    currency_code: 'usd',
     logo: 'https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=400',
     cover_photo: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200',
   },
@@ -41,13 +46,15 @@ const RESTAURANTS = [
     restaurant_id: 'RES_GREEN_BOWL',
     name: 'Green Bowl Co.',
     description: 'Plant-based bowls bursting with flavour and nutrition.',
-    address: '88 Camden Lock, London NW1 8AF',
+    address: '88 Camden Lock, London NW1 8AF, UK',
     restaurant_type_id: 'RTY_VEGAN',
     restaurant_type_title: 'Vegan',
     delivery_charge: 1.99,
     minimum_order_amount: 12,
     restaurant_longitude: -0.1466,
     restaurant_latitude: 51.5419,
+    currency: '£',
+    currency_code: 'gbp',
     logo: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400',
     cover_photo: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=1200',
   },
@@ -55,13 +62,15 @@ const RESTAURANTS = [
     restaurant_id: 'RES_KETO_LAB',
     name: 'Keto Lab',
     description: 'Low-carb, high-fat meals scientifically dialled in.',
-    address: '5 Brick Lane, London E1 6PU',
+    address: '10 Rue de Rivoli, 75004 Paris, France',
     restaurant_type_id: 'RTY_KETO',
     restaurant_type_title: 'Keto',
     delivery_charge: 3.49,
     minimum_order_amount: 18,
-    restaurant_longitude: -0.0717,
-    restaurant_latitude: 51.5212,
+    restaurant_longitude: 2.3522,
+    restaurant_latitude: 48.8566,
+    currency: '€',
+    currency_code: 'eur',
     logo: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400',
     cover_photo: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=1200',
   },
@@ -69,13 +78,15 @@ const RESTAURANTS = [
     restaurant_id: 'RES_BALANCED_TABLE',
     name: 'The Balanced Table',
     description: 'Macro-balanced family meals delivered fresh.',
-    address: '23 Notting Hill Gate, London W11 3JE',
+    address: '1 Chome-1 Marunouchi, Chiyoda City, Tokyo 100-0005, Japan',
     restaurant_type_id: 'RTY_BALANCED',
     restaurant_type_title: 'Balanced',
-    delivery_charge: 2.49,
-    minimum_order_amount: 14,
-    restaurant_longitude: -0.1968,
-    restaurant_latitude: 51.5095,
+    delivery_charge: 350,
+    minimum_order_amount: 1500,
+    restaurant_longitude: 139.7671,
+    restaurant_latitude: 35.6812,
+    currency: '¥',
+    currency_code: 'jpy',
     logo: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=400',
     cover_photo: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=1200',
   },
@@ -83,13 +94,15 @@ const RESTAURANTS = [
     restaurant_id: 'RES_LEAN_LARDER',
     name: 'Lean Larder',
     description: 'Low-carb chef-made meals for busy weekdays.',
-    address: '40 Shoreditch High St, London E1 6JJ',
+    address: 'Unter den Linden 77, 10117 Berlin, Germany',
     restaurant_type_id: 'RTY_LOW_CARB',
     restaurant_type_title: 'Low Carb',
     delivery_charge: 2.99,
     minimum_order_amount: 15,
-    restaurant_longitude: -0.0775,
-    restaurant_latitude: 51.5235,
+    restaurant_longitude: 13.3777,
+    restaurant_latitude: 52.5163,
+    currency: '€',
+    currency_code: 'eur',
     logo: 'https://images.unsplash.com/photo-1432139509613-5c4255815697?w=400',
     cover_photo: 'https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=1200',
   },
@@ -202,6 +215,8 @@ async function seed() {
       const templates = ITEM_TEMPLATES[cat.suffix] || [];
       for (let i = 0; i < templates.length; i++) {
         const t = templates[i];
+        // JPY has no minor unit — bump baseline so prices feel right.
+        const localPrice = r.currency_code === 'jpy' ? Math.round(t.price * 130) : t.price;
         await new ItemModel({
           item_id: `ITM_${r.restaurant_id}_${cat.suffix}_${i}`,
           restaurant_id: r.restaurant_id,
@@ -210,7 +225,9 @@ async function seed() {
           title: t.title,
           description: t.description,
           ingredients: t.description,
-          price: t.price,
+          price: localPrice,
+          currency: r.currency,
+          currency_code: r.currency_code,
           cover_photo: t.image,
           image: t.image,
           banner: [t.image],
@@ -245,19 +262,19 @@ async function seed() {
   console.log('inserted coupons');
 
   // demo user (idempotent)
-  const existing = await UserModel.findOne({ email: 'demo@marvinsden.test' });
+  const existing = await UserModel.findOne({ email: 'demo@mealhub.test' });
   if (!existing) {
     await new UserModel({
       consumer_id: 'CON_DEMO_USER',
       name: 'Demo User',
-      email: 'demo@marvinsden.test',
+      email: 'demo@mealhub.test',
       password: 'demo1234',
-      mobile: '7700900000',
-      mobile_country_code: '+44',
+      mobile: '5555550100',
+      mobile_country_code: '+1',
       credit: 25,
-      login_address: 'London, UK',
+      login_address: 'New York, NY, USA',
     }).save();
-    console.log('created demo user (demo@marvinsden.test / demo1234)');
+    console.log('created demo user (demo@mealhub.test / demo1234)');
   } else {
     console.log('demo user already exists');
   }

@@ -31,8 +31,7 @@ import AddressAuto from '../auth/address-auto';
 import Input from '../ui/forms/input';
 import RadioButton from '../ui/forms/radio-button';
 import * as fbq from '../../lib/fpixel';
-import { analytics } from '@/lib/firebase';
-import { logEvent } from 'firebase/analytics';
+import { analytics, logEvent } from '@/lib/firebase';
 
 export default function CartCheckout({ priceInfo }: { priceInfo: any }) {
   const router = useRouter();
@@ -49,13 +48,13 @@ export default function CartCheckout({ priceInfo }: { priceInfo: any }) {
     onSuccess: (res) => {
       //FB ANALYTICS
       fbq.event('Purchase', {
-        currency: 'GBP',
+        currency: currencyCode,
         value: total + deliveryCharge,
       });
 
       // google analytics
       logEvent(analytics, 'purchase', {
-        currency: 'GBP',
+        currency: currencyCode,
         value: total + deliveryCharge,
         transaction_id: res.payload.order_id,
       });
@@ -107,6 +106,11 @@ export default function CartCheckout({ priceInfo }: { priceInfo: any }) {
   // const [payableAmount] = useAtom(payableAmountAtom);
   const [token] = useAtom(verifiedTokenAtom);
   const { items, verifiedResponse } = useCart();
+  // Currency comes from the (single-restaurant) cart. Falls back to USD.
+  const currencySymbol = (items[0] as any)?.currency || '$';
+  const currencyCode = (
+    (items[0] as any)?.currency_code || 'usd'
+  ).toUpperCase();
 
   const available_items = items;
 
@@ -220,27 +224,38 @@ export default function CartCheckout({ priceInfo }: { priceInfo: any }) {
       <div className="mb-6 flex flex-col gap-3 text-dark dark:text-light sm:mb-7">
         <div className="flex justify-between">
           <p>Sub Total</p>
-          <strong className="font-semibold">£{total.toFixed(2)}</strong>
+          <strong className="font-semibold">
+            {currencySymbol}
+            {total.toFixed(2)}
+          </strong>
         </div>
         <div className="flex justify-between">
           <p>Delivery Charge</p>
           <strong className="font-semibold">
-            £{deliveryCharge.toFixed(2)}
+            {currencySymbol}
+            {deliveryCharge.toFixed(2)}
           </strong>
         </div>
         <div className="flex justify-between">
           <p>Credit Amount</p>
-          <strong className="font-semibold">£{credit.toFixed(2)}</strong>
+          <strong className="font-semibold">
+            {currencySymbol}
+            {credit.toFixed(2)}
+          </strong>
         </div>
         <div className="flex justify-between">
           <p>Coupon Discount Amount</p>
-          <strong className="font-semibold">£{couponValue.toFixed(2)}</strong>
+          <strong className="font-semibold">
+            {currencySymbol}
+            {couponValue.toFixed(2)}
+          </strong>
         </div>
         <hr />
         <div className="flex justify-between">
           <p>Total</p>
           <strong className="font-semibold">
-            £{(total - credit - couponValue + deliveryCharge).toFixed(2)}
+            {currencySymbol}
+            {(total - credit - couponValue + deliveryCharge).toFixed(2)}
           </strong>
         </div>
       </div>

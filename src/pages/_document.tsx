@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-sync-scripts */
 import Document, {
   DocumentContext,
   Head,
@@ -7,21 +6,20 @@ import Document, {
   NextScript,
 } from 'next/document';
 
-const source = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_API_KEY}&libraries=places`;
 class CustomDocument extends Document {
   static async getInitialProps(ctx: DocumentContext) {
     return Document.getInitialProps(ctx);
   }
   render() {
     return (
-      <Html lang="en-US">
+      <Html lang="en">
         <Head>
           <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
           <link
             href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
             rel="stylesheet"
           />
-          <script type="text/javascript" src={source}></script>
         </Head>
         <body>
           <Main />

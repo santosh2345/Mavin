@@ -12,39 +12,42 @@ import Button from '@/components/ui/button';
 import { RegisterBgPattern } from '@/components/auth/register-bg-pattern';
 import { useState, useRef } from 'react';
 import useAuth from './use-auth';
-import PhoneInput, { usePhoneInput } from '@/components/ui/forms/phone-input';
 import { useUserContext } from '../preppers/context';
 import { ServerErrors } from '@/components/ui/forms/form';
 import * as fbq from '../../lib/fpixel';
-import { analytics } from '@/lib/firebase';
-import { logEvent } from 'firebase/analytics';
+import { analytics, logEvent } from '@/lib/firebase';
 
+// Email-only sign-up. The OTP is delivered via Nodemailer (see
+// src/pages/api/auth/send-otp.ts) so there is no SMS provider required and
+// no phone number is collected at all.
 const registerUserValidationSchema = yup.object().shape({
-  name: yup.string().max(20).required(),
+  name: yup.string().max(40).required(),
   email: yup.string().email().required(),
   password: yup.string().required().min(6),
-  mobile: yup.string(),
-
-  register_type: yup.string(),
-  mobile_country_code: yup.string(),
-  otp: yup.number().min(4).required(),
-  code: yup.string(),
-  device_id: yup.string(),
-  device_token: yup.string(),
-  device_type: yup.string(),
-  device_name: yup.string(),
-  user_type: yup.string(),
+  otp: yup
+    .string()
+    .matches(/^\d{4,6}$/, 'Code should be 4–6 digits')
+    .required(),
 });
+
+type FormValues = {
+  name: string;
+  email: string;
+  password: string;
+  otp: string;
+};
 
 export default function RegisterUserForm() {
   const { openModal, closeModal } = useModalAction();
   const { authorize } = useAuth();
-  const { location, setUserInfo } = useUserContext();
-  const { phoneNumber } = usePhoneInput();
+  const { setUserInfo } = useUserContext();
   const [codeSent, setCodeSent] = useState(false);
   const [time, setTime] = useState(0);
   const timerRef = useRef<any>();
   const timeTempRef = useRef<number>(0);
+  // Email used to request the OTP — kept in a ref so the "Send code" button
+  // doesn't have to live inside the react-hook-form context.
+  const pendingEmailRef = useRef<string>('');
 
   let [serverError, setServerError] = useState<RegisterUserInput | null>(null);
   const { mutate, isLoading } = useMutation(client.users.register, {
@@ -59,12 +62,10 @@ export default function RegisterUserForm() {
         className: '-mt-10 xs:mt-0',
       });
 
-      //FB ANALYTICS
       fbq.event('CompleteRegistration', {
         content_name: 'consumer_id',
         value: res.payload.consumer_id,
       });
-      // google analytics
       logEvent(analytics, 'sign_up', {
         content_name: 'consumer_id',
         value: res.payload.consumer_id,
@@ -78,7 +79,7 @@ export default function RegisterUserForm() {
       toast.error(<b>Something went wrong</b>, {
         className: '-mt-10 xs:mt-0',
       });
-      setServerError(err.response.data);
+      setServerError(err.response?.data);
     },
   });
 
@@ -92,7 +93,7 @@ export default function RegisterUserForm() {
           });
           return;
         }
-        toast.success(<b>Code Sent!</b>, {
+        toast.success(<b>Code sent to your email</b>, {
           className: '-mt-10 xs:mt-0',
         });
         clearTimeout(timerRef.current);
@@ -102,37 +103,45 @@ export default function RegisterUserForm() {
         timerRef.current = setInterval(() => {
           timeTempRef.current++;
           setTime(timeTempRef.current);
-
           if (timeTempRef.current === 60) {
             clearTimeout(timerRef.current);
             setCodeSent(false);
           }
         }, 1000);
       },
+      onError: () => {
+        toast.error(<b>Could not send code — check your email</b>, {
+          className: '-mt-10 xs:mt-0',
+        });
+      },
     }
   );
-  const onSubmit: SubmitHandler<RegisterUserInput> = (data) => {
+
+  const onSubmit: SubmitHandler<FormValues> = (data) => {
     clearTimeout(timerRef.current);
     mutate({
-      ...data,
-
+      ...(data as any),
       register_type: 'email',
-      mobile_country_code: '+44',
       code: 'EN',
-      device_id: 'xxx',
-      device_token: 'xxx',
-      device_type: 'android',
-      device_name: 'xxx',
+      device_id: 'web',
+      device_token: 'web',
+      device_type: 'web',
+      device_name: 'web',
       user_type: 'consumer',
-      mobile: phoneNumber.substring(2),
     });
   };
 
   const codeClick = () => {
+    const email = pendingEmailRef.current.trim();
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      toast.error(<b>Enter your email first</b>, {
+        className: '-mt-10 xs:mt-0',
+      });
+      return;
+    }
     optMutate({
       type: 'consumer',
-      mobile: phoneNumber.substring(2),
-      mobile_country_code: '+44',
+      email,
       request_type: 'signUp',
       code: 'EN',
     });
@@ -145,10 +154,10 @@ export default function RegisterUserForm() {
         <div className="w-full shrink-0 text-left md:w-[380px]">
           <div className="flex flex-col pb-5 text-center lg:pb-9 xl:pb-10 xl:pt-2">
             <h2 className="text-lg font-medium tracking-[-0.3px] text-dark dark:text-light lg:text-xl">
-              Welcome Back, Get Login
+              Create your account
             </h2>
             <div className="mt-1.5 text-13px leading-6 tracking-[0.2px] dark:text-light-900 lg:mt-2.5 xl:mt-3">
-              Create your account. Already have account?{' '}
+              Already have an account?{' '}
               <button
                 onClick={() => openModal('LOGIN_VIEW')}
                 className="inline-flex font-semibold text-brand hover:text-dark-400 hover:dark:text-light-500"
@@ -158,7 +167,7 @@ export default function RegisterUserForm() {
             </div>
           </div>
 
-          <Form<RegisterUserInput>
+          <Form<FormValues>
             onSubmit={onSubmit}
             validationSchema={registerUserValidationSchema}
             serverError={
@@ -169,69 +178,64 @@ export default function RegisterUserForm() {
             }
             className="space-y-4 lg:space-y-5"
           >
-            {({ register, formState: { errors } }) => (
-              <>
-                <Input
-                  label="Name"
-                  inputClassName="bg-light dark:bg-dark-300"
-                  {...register('name')}
-                  error={errors.name?.message}
-                />
-                <div>
-                  <span className="block cursor-pointer pb-2.5 text-13px font-normal text-dark/70 dark:text-light/70">
-                    Phone Number
-                  </span>
-                  <PhoneInput />
-                  {phoneNumber.substring(2)?.length !== 10 ? (
-                    <span className="block pt-2 text-xs text-warning">
-                      {!phoneNumber.substring(2)
-                        ? 'Phone number is required'
-                        : 'Please input correct phone number'}
-                    </span>
-                  ) : (
+            {({ register, formState: { errors }, watch }) => {
+              // Keep the latest email value in a ref so the Send-code button
+              // (outside the submit handler) can read it without re-rendering
+              // the entire form on every keystroke.
+              pendingEmailRef.current = watch('email') || '';
+              return (
+                <>
+                  <Input
+                    label="Name"
+                    inputClassName="bg-light dark:bg-dark-300"
+                    {...register('name')}
+                    error={errors.name?.message}
+                  />
+                  <Input
+                    label="Email"
+                    inputClassName="bg-light dark:bg-dark-300"
+                    type="email"
+                    {...register('email')}
+                    error={errors.email?.message}
+                  />
+                  <div>
                     <p
-                      onClick={() => codeClick()}
-                      className="float-right mt-2 cursor-pointer text-sm font-semibold text-brand hover:text-brand-dark"
+                      onClick={codeClick}
+                      className="float-right -mt-1 cursor-pointer text-sm font-semibold text-brand hover:text-brand-dark"
                     >
                       {!codeSent ? 'Send code' : 'Re-send code'}
                     </p>
+                    <div className="clear-both" />
+                  </div>
+                  <Input
+                    label="Verification code"
+                    inputClassName="bg-light dark:bg-dark-300"
+                    inputMode="numeric"
+                    {...register('otp')}
+                    error={errors.otp?.message}
+                    disabled={optLoading || !codeSent}
+                  />
+                  {codeSent && (
+                    <p className="float-right -translate-y-4 text-warning">{`00 : ${
+                      60 - time >= 10 ? 60 - time : '0' + (60 - time)
+                    }`}</p>
                   )}
-                </div>
-                <Input
-                  label="Verify your code"
-                  inputClassName="bg-light dark:bg-dark-300"
-                  type="number"
-                  {...register('otp')}
-                  error={errors.otp ? 'Code should be 4 digits' : ''}
-                  disabled={optLoading || !codeSent}
-                />
-                {codeSent && (
-                  <p className="float-right -translate-y-4 text-warning">{`00 : ${
-                    60 - time >= 10 ? 60 - time : '0' + (60 - time)
-                  }`}</p>
-                )}
-                <Input
-                  label="Email"
-                  inputClassName="bg-light dark:bg-dark-300"
-                  type="email"
-                  {...register('email')}
-                  error={errors.email?.message}
-                />
-                <Password
-                  label="Password"
-                  inputClassName="bg-light dark:bg-dark-300"
-                  {...register('password')}
-                  error={errors.password?.message}
-                />
-                <Button
-                  type="submit"
-                  className="!mt-5 w-full text-sm tracking-[0.2px] lg:!mt-7"
-                  disabled={isLoading}
-                >
-                  Register
-                </Button>
-              </>
-            )}
+                  <Password
+                    label="Password"
+                    inputClassName="bg-light dark:bg-dark-300"
+                    {...register('password')}
+                    error={errors.password?.message}
+                  />
+                  <Button
+                    type="submit"
+                    className="!mt-5 w-full text-sm tracking-[0.2px] lg:!mt-7"
+                    disabled={isLoading}
+                  >
+                    Register
+                  </Button>
+                </>
+              );
+            }}
           </Form>
         </div>
       </div>

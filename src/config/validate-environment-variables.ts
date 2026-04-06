@@ -4,12 +4,11 @@ import { ConfigValue } from '.';
 const environmentVariablesSchema = yup.object().shape({
   NODE_ENV: yup
     .string()
-    .oneOf(['development', 'production'])
+    .oneOf(['development', 'production', 'test'])
     .default('development'),
   NEXT_PUBLIC_REST_API_ENDPOINT: yup.string().required(),
   NEXT_PUBLIC_WEBSITE_URL: yup.string().required(),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: yup.string().required(),
-  NEXT_PUBLIC_GOOGLE_API_KEY: yup.string().required(),
 });
 
 export function validateEnvironmentVariables() {

@@ -16,7 +16,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   return ok(res, {
     ...serializeItemForBundle(item),
     restaurant_name: restaurant?.name || item.restaurant_name,
-    currency: restaurant?.currency || '£',
+    currency: restaurant?.currency || (item as any).currency || '$',
+    currency_code:
+      restaurant?.currency_code || (item as any).currency_code || 'usd',
   });
 }
 

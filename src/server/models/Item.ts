@@ -20,6 +20,7 @@ export interface IItem extends Document {
   preparation_time: string;
   est_weight: string;
   currency: string;
+  currency_code: string;
   item_options: any[];
   search_keywords: string[];
 }
@@ -44,7 +45,8 @@ const ItemSchema = new Schema<IItem>(
     badge_count: { type: Number, default: 0 },
     preparation_time: { type: String, default: '20' },
     est_weight: { type: String, default: '300g' },
-    currency: { type: String, default: '£' },
+    currency: { type: String, default: '$' },
+    currency_code: { type: String, default: 'usd' },
     item_options: { type: [Schema.Types.Mixed], default: [] },
     search_keywords: [{ type: String }],
   },

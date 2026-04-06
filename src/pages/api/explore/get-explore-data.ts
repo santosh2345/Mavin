@@ -36,7 +36,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       title: t.title,
       count: data.length,
       restaurant_type_id: t.restaurant_type_id,
-      currency: '£',
+      // Group-level currency is just used for the heading; the per-restaurant
+      // currency on each card is what actually drives prices and Stripe.
+      currency: data[0]?.currency || '$',
       data,
     };
   });

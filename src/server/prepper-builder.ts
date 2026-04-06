@@ -52,6 +52,7 @@ export function serializeItemForBundle(item: any) {
     restaurant_id: item.restaurant_id,
     restaurant_name: item.restaurant_name,
     currency: item.currency,
+    currency_code: item.currency_code,
     item_options: item.item_options,
   };
 }

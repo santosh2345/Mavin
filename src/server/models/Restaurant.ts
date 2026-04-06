@@ -29,6 +29,7 @@ export interface IRestaurant extends Document {
   banner?: any[];
   is_favorite?: boolean;
   currency?: string;
+  currency_code?: string;
   is_mobile_update?: boolean;
   facebookURL?: string;
   instagramURL?: string;
@@ -60,7 +61,7 @@ const RestaurantSchema = new Schema<IRestaurant>(
     delivery_charge: { type: Number, default: 2.99 },
     email: { type: String, default: '' },
     mobile: { type: String, default: '' },
-    mobile_country_code: { type: String, default: '+44' },
+    mobile_country_code: { type: String, default: '' },
     description: { type: String, default: '' },
     minimum_order_amount: { type: Number, default: 0 },
     nick_name: { type: String, default: '' },
@@ -70,7 +71,10 @@ const RestaurantSchema = new Schema<IRestaurant>(
     is_free_delivery: { type: Boolean, default: false },
     banner: { type: [Schema.Types.Mixed], default: [] },
     is_favorite: { type: Boolean, default: false },
-    currency: { type: String, default: '£' },
+    // Display symbol shown next to prices in the UI (e.g. '$', '€', '£', '¥').
+    currency: { type: String, default: '$' },
+    // ISO 4217 code used by Stripe and Intl.NumberFormat (e.g. 'usd', 'eur').
+    currency_code: { type: String, default: 'usd' },
     is_mobile_update: { type: Boolean, default: false },
     facebookURL: { type: String, default: '' },
     instagramURL: { type: String, default: '' },

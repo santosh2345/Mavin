@@ -2,12 +2,21 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { withDb, methodGuard, ok, fail } from '@/server/api-helpers';
 import { getStripe } from '@/server/stripe';
 import { UserModel } from '@/server/models/User';
+import { RestaurantModel } from '@/server/models/Restaurant';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!methodGuard(req, res, ['POST'])) return;
-  const { amount, consumer_id, restaurant_id } = req.body || {};
-  if (!amount || amount < 30) return fail(res, 'Amount must be at least 30 (pence)', 422);
+  const { amount, consumer_id, restaurant_id, currency } = req.body || {};
+  if (!amount || amount < 30) return fail(res, 'Amount must be at least 30 (smallest currency unit)', 422);
   if (!consumer_id) return fail(res, 'consumer_id is required', 422);
+
+  // Resolve currency: explicit body param wins, else look up the restaurant.
+  let currencyCode: string = (currency || '').toString().toLowerCase();
+  if (!currencyCode && restaurant_id) {
+    const r = await RestaurantModel.findOne({ restaurant_id });
+    currencyCode = (r?.currency_code || 'usd').toLowerCase();
+  }
+  if (!currencyCode) currencyCode = 'usd';
 
   const stripe = getStripe();
 
@@ -44,11 +53,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const intent = await stripe.paymentIntents.create({
     amount: Math.round(Number(amount)),
-    currency: 'gbp',
+    currency: currencyCode,
     customer: customerId,
     receipt_email: user.email,
     automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
-    metadata: { consumer_id, restaurant_id: restaurant_id || '' },
+    metadata: {
+      consumer_id,
+      restaurant_id: restaurant_id || '',
+      currency: currencyCode,
+    },
   });
 
   return ok(
